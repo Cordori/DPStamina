@@ -1,0 +1,67 @@
+# 调试选项
+debug: false
+
+# 消息前缀
+prefix: '&e[地牢体力]'
+
+# 存储模式, SQLite 或者 MySQL ,默认SQLite本地存储，修改这个值需要重启
+database: 'SQLite'
+
+# 每隔多少分钟保存一次数据到数据库，修改完这个值需要重启
+saveTime: 5
+
+# 数据库设置
+MySQL:
+  host: localhost
+  port: 3306
+  username: root
+  password: root
+  table: DPStamina
+  # MySQL5 使用: com.mysql.jdbc.Driver
+  # MySQL8 使用: com.mysql.cj.jdbc.Driver
+  driver: 'com.mysql.jdbc.Driver'
+  jdbc: '?useSSL=false&useUnicode=true&characterEncoding=utf8'
+
+# 进入副本消耗的体力
+cost: 10
+
+# 是否允许离线后也恢复体力，修改完这个值建议重启
+offline: true
+
+# 每隔多少分钟恢复一次体力，修改完这个值需要重启
+minutes: 1
+
+# 体力组设置
+group:
+  # 默认组名，不可重复
+  default:
+    # 体力上限
+    limit: 100
+    # 每次回复的体力值，支持数值、变量，但是不支持运算，你可以使用math拓展进行运算，例如%math_{player_level}*2+10%
+    recover: 0.5
+  # vip1组
+  vip1:
+    limit: 200
+    recover: 1
+  # vip2组
+  vip2:
+    limit: 300
+    # 因为不能直接以%开头，干脆就加个【PAPI:】用来识别了。
+    # 这是固定的格式，要写变量一定要加，然后后面跟变量，不要加空格啥的
+    # 错误示范1:    PAPI: %player_level%
+    # 错误示范2:    papi:%player_level%
+    recover: PAPI:%player_level%
+  vip3:
+    limit: 500
+    recover: PAPI:%player_health%
+
+# 消息提示
+messages:
+  reload: '&6插件配置重载成功！'
+  give: '&b成功为玩家&6 %player% &b添加&e %num% &b点体力，当前体力为&e %stamina%'
+  take: '&c成功为玩家&6 %player% &c减少&e %num% &c点体力，当前体力为&e %stamina%'
+  set: '&b成功设置玩家&6 %player% &b体力为&e %num%'
+  group: '&b已将玩家&6 %player% &b的体力组改为&e %group%'
+  join: '&b您已离线&e %min% &b分钟，共恢复&e %num% &b点体力，当前体力为&e %stamina%'
+  failJoin: '&c进入地牢失败！以下队伍成员体力不足: &b'
+  cost: '&b成功消耗&e %cost% &b点体力进入地牢&e %dungeon%，剩余体力为&e %stamina%'

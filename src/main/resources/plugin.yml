@@ -1,0 +1,15 @@
+name: DPStamina
+author: Cordori
+version: '${project.version}'
+main: cordori.dpstamina.DPStamina
+description: '一个DungeonPlus的附属插件，提供体力、门票功能。'
+depend:
+  - DungeonPlus
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  dpstamina:
+    permission: admin
+    aliases:
+      - dps
