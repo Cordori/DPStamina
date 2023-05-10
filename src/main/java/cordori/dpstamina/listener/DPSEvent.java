@@ -32,13 +32,13 @@ public class DPSEvent implements Listener {
             List<Player> failJoinList = new ArrayList<>();
 
             for(Player player : playerList) {
-                double stamina = PlayerData.HashMap.get(player).getStamina();
+                double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
                 if(stamina < ConfigManager.cost) failJoinList.add(player);
             }
 
             if (!failJoinList.isEmpty()) {
                 // 拼接体力不足的玩家名字
-                StringBuilder sb = new StringBuilder(ConfigManager.messagesHashMap.get("failJoin"));
+                StringBuilder sb = new StringBuilder(ConfigManager.messagesHashMap.get("failEnter"));
                 for (Player player : failJoinList) {
                     sb.append(player.getName()).append(", ");
                 }
@@ -51,11 +51,11 @@ public class DPSEvent implements Listener {
         // 加入地牢之后扣除体力
         if(event.getEvent() instanceof DungeonStartEvent.After) {
             for(Player player : playerList) {
-                double stamina = PlayerData.HashMap.get(player).getStamina();
+                double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
                 double newStamina = stamina - ConfigManager.cost;
                 String dungeonName = event.getDungeon().getDungeonName();
 
-                PlayerData.HashMap.get(player).setStamina(newStamina);
+                PlayerData.dataHashMap.get(player.getUniqueId()).setStamina(newStamina);
 
                 player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("cost")
                         .replaceAll("%cost%", String.valueOf(ConfigManager.cost))
@@ -70,14 +70,14 @@ public class DPSEvent implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(dps, () -> {
             Player player = event.getPlayer();
-            String uuid = player.getUniqueId().toString();
-            List<Object> objectsList = DPStamina.sql.getList(uuid);
+            UUID uuid = player.getUniqueId();
+            List<Object> objectsList = DPStamina.sql.getList(String.valueOf(uuid));
 
             // 如果数据不存在，插入默认数据
             if(objectsList == null) {
                 PlayerData playerData = new PlayerData("default", 100.0);
-                PlayerData.HashMap.put(player, playerData);
-                DPStamina.sql.insert(uuid);
+                PlayerData.dataHashMap.put(uuid, playerData);
+                DPStamina.sql.insert(String.valueOf(uuid));
                 return;
             }
 
@@ -87,8 +87,8 @@ public class DPSEvent implements Listener {
             // 如果开启了离线回复，计算回复量后存入PlayerData
             if(ConfigManager.offline) {
                 long lastTime = (long) objectsList.get(2);
-                double limit = StaminaGroup.HashMap.get(staminaGroup).getLimit();
-                double recover = Double.parseDouble(PlaceholderAPI.setPlaceholders(player, StaminaGroup.HashMap.get(staminaGroup).getRecover()));
+                double limit = StaminaGroup.groupHashMap.get(staminaGroup).getLimit();
+                double recover = Double.parseDouble(PlaceholderAPI.setPlaceholders(player, StaminaGroup.groupHashMap.get(staminaGroup).getRecover()));
                 long currentTime = System.currentTimeMillis();
                 long timeDiffMinutes = (currentTime - lastTime) / (1000L * 60L * ConfigManager.minutes);
                 double timeRecover = timeDiffMinutes * recover;
@@ -98,19 +98,18 @@ public class DPSEvent implements Listener {
                     timeRecover = Math.max(limit - stamina, 0);
                 }
 
-                //  玩家进入时数据库读取数据，用playerData存储
-                PlayerData playerData = new PlayerData(staminaGroup, recoveredStamina);
-                PlayerData.HashMap.put(player, playerData);
+                //  玩家进入时从数据库读取数据，用playerData存储
+                PlayerData.dataHashMap.put(uuid, new PlayerData(staminaGroup, recoveredStamina));
 
                 player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("join")
                         .replaceAll("%min%", String.valueOf(timeDiffMinutes))
                         .replaceAll("%num%", String.valueOf(timeRecover))
                         .replaceAll("%stamina%", String.valueOf(recoveredStamina))
                 );
+
             } else {
                 // 如果没开离线回复，直接获取数据库数据并存入PlayerData
-                PlayerData playerData = new PlayerData(staminaGroup, stamina);
-                PlayerData.HashMap.put(player, playerData);
+                PlayerData.dataHashMap.put(uuid, new PlayerData(staminaGroup, stamina));
             }
         });
     }
@@ -118,12 +117,17 @@ public class DPSEvent implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(dps, () -> {
+
             Player player = event.getPlayer();
-            String uuid = player.getUniqueId().toString();
+            UUID uuid = player.getUniqueId();
+
             //玩家退出时把 PlayerData 的玩家数据同步到数据库中
-            double stamina = PlayerData.HashMap.get(player).getStamina();
-            String staminaGroup = PlayerData.HashMap.get(player).getStaminaGroup();
-            DPStamina.sql.updateAll(uuid, stamina, staminaGroup);
+            PlayerData playerData = PlayerData.dataHashMap.get(uuid);
+            double stamina = playerData.getStamina();
+            String staminaGroup = playerData.getStaminaGroup();
+
+            DPStamina.sql.updateAll(String.valueOf(uuid), stamina, staminaGroup);
+            PlayerData.dataHashMap.remove(uuid);
         });
     }
 

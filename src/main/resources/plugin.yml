@@ -2,7 +2,7 @@ name: DPStamina
 author: Cordori
 version: '${project.version}'
 main: cordori.dpstamina.DPStamina
-description: '一个DungeonPlus的附属插件，提供体力、门票功能。'
+description: '一个用于DungeonPlus的体力插件'
 depend:
   - DungeonPlus
 softdepend:

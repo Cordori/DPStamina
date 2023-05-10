@@ -12,6 +12,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.UUID;
+
 public final class DPStamina extends JavaPlugin {
     private static DPStamina Instance;
     public static SQLManager sql;
@@ -39,11 +41,11 @@ public final class DPStamina extends JavaPlugin {
     public void onDisable() {
         for(Player player : Bukkit.getOnlinePlayers()) {
             // 插件卸载时把 PlayerData 的玩家数据同步到数据库中
-            String uuid = player.getUniqueId().toString();
-            double stamina = PlayerData.HashMap.get(player).getStamina();
-            String staminaGroup = PlayerData.HashMap.get(player).getStaminaGroup();
+            UUID uuid = player.getUniqueId();
+            double stamina = PlayerData.dataHashMap.get(uuid).getStamina();
+            String staminaGroup = PlayerData.dataHashMap.get(uuid).getStaminaGroup();
 
-            sql.updateAll(uuid, stamina, staminaGroup);
+            sql.updateAll(String.valueOf(uuid), stamina, staminaGroup);
         }
 
         // 取消任务调度

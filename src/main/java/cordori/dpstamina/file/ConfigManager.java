@@ -33,7 +33,7 @@ public class ConfigManager {
 
     private static void loadGroup(DPStamina dps) {
         groupKey.clear();
-        StaminaGroup.HashMap.clear();
+        StaminaGroup.groupHashMap.clear();
         File file = new File(dps.getDataFolder(), "config.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         Set<String> groupNames = config.getConfigurationSection("group").getKeys(false);
@@ -44,7 +44,7 @@ public class ConfigManager {
                 recover = recover.substring(5);
             }
             groupKey.add(groupName);
-            StaminaGroup.HashMap.put(groupName, new StaminaGroup(limit, recover));
+            StaminaGroup.groupHashMap.put(groupName, new StaminaGroup(limit, recover));
 
             if(debug) {
                 System.out.println("-------------------------------");

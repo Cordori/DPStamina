@@ -10,5 +10,5 @@ public class StaminaGroup {
     private final double limit;
     private final String recover;
 
-    public static HashMap<String, StaminaGroup> HashMap = new HashMap<>();
+    public static HashMap<String, StaminaGroup> groupHashMap = new HashMap<>();
 }

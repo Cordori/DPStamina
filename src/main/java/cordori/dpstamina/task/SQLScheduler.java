@@ -5,17 +5,18 @@ import cordori.dpstamina.utils.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.UUID;
+
 public class SQLScheduler implements Runnable {
     @Override
     public void run() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-
-            PlayerData playerData = PlayerData.HashMap.get(player);
+            UUID uuid = player.getUniqueId();
+            PlayerData playerData = PlayerData.dataHashMap.get(uuid);
             double stamina = playerData.getStamina();
             String group = playerData.getStaminaGroup();
-            String uuid = player.getUniqueId().toString();
 
-            DPStamina.sql.updateAll(uuid, stamina, group);
+            DPStamina.sql.updateAll(String.valueOf(uuid), stamina, group);
 
         }
     }

@@ -6,17 +6,19 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.UUID;
+
 public class StaminaScheduler implements Runnable {
 
     @Override
     public void run() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-
-            PlayerData playerData = PlayerData.HashMap.get(player);
+            UUID uuid = player.getUniqueId();
+            PlayerData playerData = PlayerData.dataHashMap.get(uuid);
             double stamina = playerData.getStamina();
             String group = playerData.getStaminaGroup();
 
-            StaminaGroup staminaGroup = StaminaGroup.HashMap.get(group);
+            StaminaGroup staminaGroup = StaminaGroup.groupHashMap.get(group);
             double limit = staminaGroup.getLimit();
             double recover = Double.parseDouble(PlaceholderAPI.setPlaceholders(player, staminaGroup.getRecover()));
             // 如果体力已经满了则不需要恢复

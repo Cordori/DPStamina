@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class MainCommand implements CommandExecutor, TabCompleter {
     private static final DPStamina dps = DPStamina.getInstance();
@@ -103,13 +104,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(ConfigManager.prefix + "§c很抱歉，你输入的体力组不正确呢~");
                     return;
                 }
+                UUID uuid = player.getUniqueId();
+                PlayerData.dataHashMap.get(uuid).setStaminaGroup(group);
 
-                PlayerData.HashMap.get(player).setStaminaGroup(group);
-
-                double currentStamina = PlayerData.HashMap.get(player).getStamina();
-                double limitStamina = StaminaGroup.HashMap.get(group).getLimit();
+                double currentStamina = PlayerData.dataHashMap.get(uuid).getStamina();
+                double limitStamina = StaminaGroup.groupHashMap.get(group).getLimit();
                 if(currentStamina > limitStamina) {
-                    PlayerData.HashMap.get(player).setStamina(limitStamina);
+                    PlayerData.dataHashMap.get(uuid).setStamina(limitStamina);
                 }
                 sender.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("group")
                         .replaceAll("%player%", playerName)
@@ -140,10 +141,10 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(ConfigManager.prefix + "§c参数错误，需要输入数字！");
                     return;
                 }
-
-                double stamina = PlayerData.HashMap.get(player).getStamina();
-                String staminaGroup = PlayerData.HashMap.get(player).getStaminaGroup();
-                double limit = StaminaGroup.HashMap.get(staminaGroup).getLimit();
+                UUID uuid = player.getUniqueId();
+                double stamina = PlayerData.dataHashMap.get(uuid).getStamina();
+                String staminaGroup = PlayerData.dataHashMap.get(uuid).getStaminaGroup();
+                double limit = StaminaGroup.groupHashMap.get(staminaGroup).getLimit();
 
                 switch (args[0].toLowerCase()) {
                     case "set":
@@ -153,7 +154,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                                 .replaceAll("%player%", playerName)
                                 .replaceAll("%num%", String.valueOf(num)
                                 );
-                        modifyStamina(sender, player, num, message1);
+                        modifyStamina(sender, uuid, num, message1);
                         break;
 
                     case "give":
@@ -169,7 +170,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                                 .replaceAll("%num%", String.valueOf(ns))
                                 .replaceAll("%stamina%", String.valueOf(newStamina)
                                 );
-                        modifyStamina(sender, player, newStamina, message2);
+                        modifyStamina(sender, uuid, newStamina, message2);
                         break;
 
                     case "take":
@@ -185,7 +186,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                                 .replaceAll("%num%", String.valueOf(rs))
                                 .replaceAll("%stamina%", String.valueOf(reducedStamina)
                                 );
-                        modifyStamina(sender, player, reducedStamina, message3);
+                        modifyStamina(sender, uuid, reducedStamina, message3);
                         break;
 
                     default:
@@ -200,8 +201,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         return false;
     }
 
-    private void modifyStamina(CommandSender sender, Player player, double newStamina, String message) {
-        PlayerData.HashMap.get(player).setStamina(newStamina);
+    private void modifyStamina(CommandSender sender, UUID uuid, double newStamina, String message) {
+        PlayerData.dataHashMap.get(uuid).setStamina(newStamina);
         sender.sendMessage(ConfigManager.prefix + message);
     }
 }

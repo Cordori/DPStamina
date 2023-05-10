@@ -7,7 +7,7 @@ prefix: '&e[地牢体力]'
 # 存储模式, SQLite 或者 MySQL ,默认SQLite本地存储，修改这个值需要重启
 database: 'SQLite'
 
-# 每隔多少分钟保存一次数据到数据库，修改完这个值需要重启
+# 每隔多少分钟保存一次数据到数据库
 saveTime: 5
 
 # 数据库设置
@@ -63,5 +63,5 @@ messages:
   set: '&b成功设置玩家&6 %player% &b体力为&e %num%'
   group: '&b已将玩家&6 %player% &b的体力组改为&e %group%'
   join: '&b您已离线&e %min% &b分钟，共恢复&e %num% &b点体力，当前体力为&e %stamina%'
-  failJoin: '&c进入地牢失败！以下队伍成员体力不足: &b'
+  failEnter: '&c进入地牢失败！以下队伍成员体力不足: &b'
   cost: '&b成功消耗&e %cost% &b点体力进入地牢&e %dungeon%，剩余体力为&e %stamina%'
