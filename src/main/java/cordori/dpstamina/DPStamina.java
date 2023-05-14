@@ -22,6 +22,7 @@ public final class DPStamina extends JavaPlugin {
         return Instance;
     }
 
+
     @Override
     public void onEnable() {
         checkPlugins();
@@ -35,6 +36,7 @@ public final class DPStamina extends JavaPlugin {
         int saveTime = getConfig().getInt("saveTime");
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new StaminaScheduler(), 0L, 20L * 60L * ConfigManager.minutes);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new SQLScheduler(), 0L, 20L * 60L * saveTime);
+        getLogger().info("§e[地牢体力]§b插件加载完成！");
     }
 
     @Override
@@ -48,18 +50,17 @@ public final class DPStamina extends JavaPlugin {
             sql.updateAll(String.valueOf(uuid), stamina, staminaGroup);
         }
 
-        // 取消任务调度
         Bukkit.getScheduler().cancelTasks(this);
 
         // 关闭sql连接
-        sql.disconnect();
+        if(sql != null) sql.disconnect();
 
         getLogger().info( "§e[地牢体力]§c插件已卸载！感谢你的使用~");
     }
 
     private void checkPlugins() {
         if(Bukkit.getPluginManager().getPlugin("DungeonPlus") != null) {
-            getLogger().info("§e[地牢体力]§b已找到DungeonPlus插件，插件加载成功！");
+            getLogger().info("§e[地牢体力]§b已找到DungeonPlus插件，插件正在加载......");
         } else {
             Bukkit.getPluginManager().disablePlugin(this);
             getLogger().severe("[地牢体力]未找到DungeonPlus插件，插件加载失败！");

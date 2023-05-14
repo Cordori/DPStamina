@@ -23,10 +23,26 @@ MySQL:
   jdbc: '?useSSL=false&useUnicode=true&characterEncoding=utf8'
 
 # 进入副本消耗的体力
-cost: 10
+cost:
+  # 默认消耗体力，如果没设置特定副本消耗多少就用默认值
+  default: 10
+  # fb1消耗的体力
+  fb1: 15
+  # fb2消耗的体力，支持PAPI，固定格式，和下面说明一样
+  fb2: PAPI:%player_level%
 
 # 是否允许离线后也恢复体力，修改完这个值建议重启
 offline: true
+
+# 是否需要在特定区域才能恢复体力，这个设置只影响在线恢复，不影响离线恢复
+regionRecover: false
+
+# 区域设置
+regions:
+  # 请严格遵守以下格式，写错了我可不帮你检查，给你一顿嘎嘎报错
+  # 世界名;坐标A;坐标B
+  - 'world;100,0,100;-100,100,-100'
+  - 'sc;200,0,200;-200,100,-200'
 
 # 每隔多少分钟恢复一次体力，修改完这个值需要重启
 minutes: 1
@@ -51,9 +67,22 @@ group:
     # 错误示范1:    PAPI: %player_level%
     # 错误示范2:    papi:%player_level%
     recover: PAPI:%player_level%
+  # vip3组
   vip3:
     limit: 500
     recover: PAPI:%player_health%
+
+# 地牢门票功能
+ticket:
+  # 是否开启地牢门票功能
+  enable: true
+  # 通用门票，可进入任意副本。识别的物品名，完全匹配。如果同时有特定门票和通用门票，会优先扣除特定门票
+  default: '&d通用门票'
+  # 特定门票，%dungeon%你在游戏中可以换成任意的副本名，但是此处请不要修改
+  # 示范1：&efb1的门票
+  # 示范2：&efb2的门票
+  particular: '&e%dungeon%的门票'
+
 
 # 消息提示
 messages:
@@ -64,4 +93,6 @@ messages:
   group: '&b已将玩家&6 %player% &b的体力组改为&e %group%'
   join: '&b您已离线&e %min% &b分钟，共恢复&e %num% &b点体力，当前体力为&e %stamina%'
   failEnter: '&c进入地牢失败！以下队伍成员体力不足: &b'
-  cost: '&b成功消耗&e %cost% &b点体力进入地牢&e %dungeon%，剩余体力为&e %stamina%'
+  cost: '&b成功消耗&e %cost% &b点体力进入地牢&e %dungeon%&b，剩余体力为&e %stamina%'
+  noTicket: '&c进入地牢失败！以下队伍成员缺少&e %dungeon% &c的门票: &b'
+  consume: '&b成功消耗一张 %ticket% &b进入地牢&e %dungeon%'

@@ -112,10 +112,14 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 if(currentStamina > limitStamina) {
                     PlayerData.dataHashMap.get(uuid).setStamina(limitStamina);
                 }
-                sender.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("group")
-                        .replaceAll("%player%", playerName)
-                        .replaceAll("%group%", group)
-                );
+
+                if(ConfigManager.messagesHashMap.containsKey("group")) {
+                    sender.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("group")
+                            .replaceAll("%player%", playerName)
+                            .replaceAll("%group%", group)
+                    );
+                }
+
             }
 
             else if (args[0].equalsIgnoreCase("set") ||

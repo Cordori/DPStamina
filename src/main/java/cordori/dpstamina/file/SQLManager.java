@@ -12,24 +12,23 @@ import java.util.List;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 public class SQLManager {
-    private final String username;
-    private final String password;
-    private final String url;
     @Getter private final BasicDataSource dataSource = new BasicDataSource();
 
     @SneakyThrows
     public SQLManager(String url, String username, String password, String driver) {
-        this.username = username;
-        this.password = password;
         Class.forName(driver);
-        this.url = url;
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);
+
+        if(DPStamina.MySQL) {
+            dataSource.setUsername(username);
+            dataSource.setPassword(password);
+        }
     }
 
     @SneakyThrows
     public Connection getConnection() {
-        return DPStamina.MySQL ? DriverManager.getConnection(url, username, password) : dataSource.getConnection();
+        return  dataSource.getConnection();
     }
 
     @SneakyThrows
