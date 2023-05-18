@@ -28,15 +28,18 @@ public class DPSEvent implements Listener {
 
     public boolean hasItem(Player player, String itemName) {
         Inventory inventory = player.getInventory();
-        for (ItemStack item : inventory.getContents()) {
+
+        for (ItemStack item : inventory) {
             if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
                     && item.getItemMeta().getDisplayName().equals(itemName)) {
                 ticketItem = item;
                 return false;
             }
         }
+
         return true;
     }
+
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerEnterDP(DungeonEvent event) {
@@ -182,6 +185,12 @@ public class DPSEvent implements Listener {
                 // 如果没开离线回复，直接获取数据库数据并存入PlayerData
                 PlayerData.dataHashMap.put(uuid, new PlayerData(staminaGroup, stamina));
             }
+
+            // 判断是否需要进行每日刷新
+            if(ConfigManager.refresh) {
+                DPStamina.sql.insertDate(player);
+            }
+
         });
     }
 

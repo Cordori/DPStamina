@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.time.LocalTime;
 import java.util.UUID;
 
 public final class DPStamina extends JavaPlugin {
@@ -29,13 +30,16 @@ public final class DPStamina extends JavaPlugin {
         Instance = this;
         createFile();
         ConfigManager.reloadMyConfig();
-        if(getConfig().getString("database").equalsIgnoreCase("MySQL")) MySQL = true;
+        if(getConfig().getString("storage").equalsIgnoreCase("MySQL")) MySQL = true;
         loadSQL();
         Bukkit.getPluginManager().registerEvents(new DPSEvent(), this);
         Bukkit.getPluginCommand("dps").setExecutor(new MainCommand());
         int saveTime = getConfig().getInt("saveTime");
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new StaminaScheduler(), 0L, 20L * 60L * ConfigManager.minutes);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new SQLScheduler(), 0L, 20L * 60L * saveTime);
+        if(ConfigManager.refresh) {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::refreshOnline, 0L, 20L * 60L);
+        }
         getLogger().info("§e[地牢体力]§b插件加载完成！");
     }
 
@@ -85,21 +89,35 @@ public final class DPStamina extends JavaPlugin {
         String port = getConfig().getString("MySQL.port");
         String username = getConfig().getString("MySQL.username");
         String password = getConfig().getString("MySQL.password");
-        String table = getConfig().getString("MySQL.table");
+        String fileName = getConfig().getString("MySQL.fileName");
+        String tableName = getConfig().getString("MySQL.tableName").toLowerCase();
         String driver;
         driver = getConfig().getString("MySQL.driver");
         String jdbc = getConfig().getString("MySQL.jdbc");
         String sqlString;
+
         if(MySQL) {
-            sqlString = "jdbc:mysql://" + host + ":" + port + "/" + table + jdbc;
+            sqlString = "jdbc:mysql://" + host + ":" + port + "/" + fileName + jdbc;
         } else {
             driver = "org.sqlite.JDBC";
             sqlString = "jdbc:sqlite:" + getDataFolder().toPath().resolve("database.db");
         }
 
-        sql = new SQLManager(sqlString, username, password, driver);
+        sql = new SQLManager(sqlString, username, password, driver, tableName);
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> sql.createTable());
 
+    }
+
+    private void refreshOnline() {
+        LocalTime currentTime = LocalTime.now();
+
+        if (currentTime.isAfter(LocalTime.parse(ConfigManager.refreshTime))) {
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                sql.insertDate(player);
+            }
+
+        }
     }
 
 }

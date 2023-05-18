@@ -14,6 +14,8 @@ public class ConfigManager {
     public static String prefix;
     public static double defaultCost;
     public static boolean offline;
+    public static boolean refresh;
+    public static String refreshTime;
     public static int minutes;
     public static List<String> groupKey = new ArrayList<>();
     public static HashMap<String, String> messagesHashMap = new HashMap<>();
@@ -31,6 +33,8 @@ public class ConfigManager {
         prefix = dps.getConfig().getString("prefix").replaceAll("&","§");
         defaultCost = dps.getConfig().getDouble("cost.default");
         offline = dps.getConfig().getBoolean("offline");
+        refresh = dps.getConfig().getBoolean("refresh");
+        refreshTime = dps.getConfig().getString("refreshTime");
         regionRecover = dps.getConfig().getBoolean("regionRecover");
         minutes = dps.getConfig().getInt("minutes");
         ticket = dps.getConfig().getBoolean("ticket.enable");
@@ -127,7 +131,7 @@ public class ConfigManager {
             messagesHashMap.put(key, message);
 
             if(debug) {
-                System.out.println("处理后的信息: " + message);
+                System.out.println(key + ": " + message);
             }
         }
     }
