@@ -23,6 +23,11 @@ MySQL:
   driver: 'com.mysql.jdbc.Driver'
   jdbc: '?useSSL=false&useUnicode=true&characterEncoding=utf8'
 
+# 地图名，由于dp不允许地图名为中文，为了消息提示好看，这里给你一个定义对应副本名字的配置
+mapNames:
+  fb1: '&a新手训练营'
+  shenyuan: '&c深渊'
+
 # 进入副本消耗的体力
 cost:
   # 默认消耗体力，如果没设置特定副本消耗多少就用默认值
@@ -81,14 +86,14 @@ group:
 
 # 地牢门票功能
 ticket:
-  # 是否开启地牢门票功能
-  enable: true
+  # 有门票和体力时会先检测是否有门票。有门票就不检测体力了。
+  # 所以你可以实现用体力买门票来攒起来。或者直接用体力加入地牢。
   # 通用门票，可进入任意副本。识别的物品名，完全匹配。如果同时有特定门票和通用门票，会优先扣除特定门票
   default: '&d通用门票'
-  # 特定门票，%dungeon%你在游戏中可以换成任意的副本名，但是此处请不要修改
-  # 示范1：&efb1的门票
-  # 示范2：&efb2的门票
-  particular: '&e%dungeon%的门票'
+  # 单独门票，每个副本名都需要单独写一个，没写门票的副本会先检测是否有通用门票，有就使用，没有就检测体力
+  particular:
+    fb1: '&e副本一入场券'
+    shenyuan: '&c深渊入场券'
 
 # 消息提示
 messages:
@@ -99,7 +104,6 @@ messages:
   group: '&b已将玩家&6 %player% &b的体力组改为&e %group%'
   join: '&b您已离线&e %min% &b分钟，共恢复&e %num% &b点体力，当前体力为&e %stamina%'
   refresh: '&e体力每日刷新！已将您的体力恢复至上限！'
-  failEnter: '&c进入地牢失败！以下队伍成员体力不足: &b'
+  failEnter: '&c进入地牢失败！以下队伍成员缺少门票或体力不足: &b'
   cost: '&b成功消耗&e %cost% &b点体力进入地牢&e %dungeon%&b，剩余体力为&e %stamina%'
-  noTicket: '&c进入地牢失败！以下队伍成员缺少&e %dungeon% &c的门票: &b'
   consume: '&b成功消耗一张 %ticket% &b进入地牢&e %dungeon%'

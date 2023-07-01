@@ -1,6 +1,7 @@
 package cordori.dpstamina.file;
 
 import cordori.dpstamina.DPStamina;
+import cordori.dpstamina.utils.LogInfo;
 import cordori.dpstamina.utils.Region;
 import cordori.dpstamina.utils.StaminaGroup;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -20,7 +21,8 @@ public class ConfigManager {
     public static List<String> groupKey = new ArrayList<>();
     public static HashMap<String, String> messagesHashMap = new HashMap<>();
     public static HashMap<String, String> mapCost = new HashMap<>();
-    public static boolean ticket = false;
+    public static HashMap<String, String> ticketNamesMap = new HashMap<>();
+    public static HashMap<String, String> mapNamesMap = new HashMap<>();
     public static String defaultTicket;
     public static String particularTicket;
     public static boolean regionRecover;
@@ -37,27 +39,42 @@ public class ConfigManager {
         refreshTime = dps.getConfig().getString("refreshTime");
         regionRecover = dps.getConfig().getBoolean("regionRecover");
         minutes = dps.getConfig().getInt("minutes");
-        ticket = dps.getConfig().getBoolean("ticket.enable");
         defaultTicket = dps.getConfig().getString("ticket.default").replaceAll("&","§");
         particularTicket = dps.getConfig().getString("ticket.particular").replaceAll("&","§");
         File file = new File(dps.getDataFolder(), "config.yml");
-        loadGroup(file);
-        loadCost(file);
-        loadRegion(file);
-        loadMessages(file);
-
+        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+        loadGroup(dps.getConfig());
+        loadCost(dps.getConfig());
+        loadTicket(dps.getConfig());
+        loadRegion(dps.getConfig());
+        loadMessages(dps.getConfig());
+        loadMapNames(dps.getConfig());
         if(debug) {
             long finishTime = System.currentTimeMillis();
             long useTime = finishTime - startTime;
-            System.out.println("重载耗时" + useTime + "ms");
+            LogInfo.debug("重载耗时" + useTime + "ms");
         }
 
     }
 
-    private static void loadRegion(File file) {
+    private static void loadMapNames(FileConfiguration config) {
+        mapNamesMap.clear();
+        Set<String> mapNames = config.getConfigurationSection("mapNames").getKeys(false);
+        for(String mapName : mapNames) {
+            String name = config.getString("mapNames." + mapName, mapName).replaceAll("&", "§");
+            mapNamesMap.put(mapName, name);
+            if(debug) {
+                LogInfo.debug("--------------------------");
+                LogInfo.debug("地图为：" + mapName);
+                LogInfo.debug("地图名为：" + name);
+                LogInfo.debug("--------------------------");
+            }
+        }
+    }
+
+    private static void loadRegion(FileConfiguration config) {
         Region.regionHashMap.clear();
 
-        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         List<String> regions = config.getStringList("regions");
 
         for(String region : regions) {
@@ -73,12 +90,27 @@ public class ConfigManager {
 
         }
 
-
     }
 
-    private static void loadCost(File file) {
+    private static void loadTicket(FileConfiguration config) {
+        ticketNamesMap.clear();
+
+        Set<String> mapNames = config.getConfigurationSection("ticket.particular").getKeys(false);
+        for(String mapName : mapNames) {
+            String ticketName = config.getString("ticket.particular." + mapName).replaceAll("&", "§");
+            ticketNamesMap.put(mapName, ticketName);
+            if(debug) {
+                LogInfo.debug("--------------------------");
+                LogInfo.debug("地图名为：" + mapName);
+                LogInfo.debug("门票名为：" + ticketName);
+                LogInfo.debug("--------------------------");
+            }
+        }
+    }
+
+    private static void loadCost(FileConfiguration config) {
         mapCost.clear();
-        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+
         Set<String> costSet = config.getConfigurationSection("cost").getKeys(false);
         for(String mapName : costSet) {
             String cost = config.getString("cost." + mapName);
@@ -88,19 +120,18 @@ public class ConfigManager {
             mapCost.put(mapName, cost);
 
             if(debug) {
-                System.out.println("-------------------------------");
-                System.out.println("地图名: " + mapName);
-                System.out.println("体力消耗: " + cost);
-                System.out.println("-------------------------------");
+                LogInfo.debug("-------------------------------");
+                LogInfo.debug("地图名: " + mapName);
+                LogInfo.debug("体力消耗: " + cost);
+                LogInfo.debug("-------------------------------");
             }
         }
     }
 
-    private static void loadGroup(File file) {
+    private static void loadGroup(FileConfiguration config) {
         groupKey.clear();
         StaminaGroup.groupHashMap.clear();
 
-        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         Set<String> groupNames = config.getConfigurationSection("group").getKeys(false);
         for(String groupName : groupNames) {
             double limit = config.getDouble("group." + groupName + ".limit", 100);
@@ -112,18 +143,18 @@ public class ConfigManager {
             StaminaGroup.groupHashMap.put(groupName, new StaminaGroup(limit, recover));
 
             if(debug) {
-                System.out.println("-------------------------------");
-                System.out.println("体力组名称: " + groupName);
-                System.out.println("体力上限: " + limit);
-                System.out.println("体力恢复量: " + recover);
-                System.out.println("-------------------------------");
+                LogInfo.debug("-------------------------------");
+                LogInfo.debug("体力组名称: " + groupName);
+                LogInfo.debug("体力上限: " + limit);
+                LogInfo.debug("体力恢复量: " + recover);
+                LogInfo.debug("-------------------------------");
             }
         }
     }
 
-    private static void loadMessages(File file) {
+    private static void loadMessages(FileConfiguration config) {
         messagesHashMap.clear();
-        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+
         Set<String> messages = config.getConfigurationSection("messages").getKeys(false);
         for(String key : messages) {
             String message = config.getString("messages." + key).replaceAll("&", "§");
@@ -131,7 +162,7 @@ public class ConfigManager {
             messagesHashMap.put(key, message);
 
             if(debug) {
-                System.out.println(key + ": " + message);
+                LogInfo.debug(key + ": " + message);
             }
         }
     }

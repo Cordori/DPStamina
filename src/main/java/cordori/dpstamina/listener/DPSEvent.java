@@ -3,9 +3,11 @@ package cordori.dpstamina.listener;
 import cordori.dpstamina.DPStamina;
 import cordori.dpstamina.file.ConfigManager;
 import cordori.dpstamina.hook.PAPIHook;
+import cordori.dpstamina.utils.LogInfo;
 import cordori.dpstamina.utils.PlayerData;
 import cordori.dpstamina.utils.StaminaGroup;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,79 +24,91 @@ import java.util.*;
 
 
 public class DPSEvent implements Listener {
-    private ItemStack ticketItem;
 
+    private final HashMap<Player, ItemStack> consumeMap = new HashMap<>();
     private static final DPStamina dps = DPStamina.getInstance();
 
+    /**
+     *
+     * @param player 玩家
+     * @param itemName 要检查的门票名
+     * @return 是否拥有该门票，有就返回false，没有返回true
+     */
     public boolean hasItem(Player player, String itemName) {
         Inventory inventory = player.getInventory();
-
         for (ItemStack item : inventory) {
             if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
                     && item.getItemMeta().getDisplayName().equals(itemName)) {
-                ticketItem = item;
+                consumeMap.put(player, item);
                 return false;
             }
         }
-
         return true;
     }
 
+    /**
+     *
+     * @param player 玩家
+     * @param dungeonName 地牢名
+     * @return 检查玩家体力是否足够
+     */
+    private boolean noEnoughStamina(Player player, String dungeonName) {
+        // 检查体力是否足够
+        double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
+        double cost = ConfigManager.defaultCost;
+        if(ConfigManager.mapCost.containsKey(dungeonName)) {
+            cost = Double.parseDouble(PAPIHook.onPAPIProcess(player, ConfigManager.mapCost.get(dungeonName)));
+        }
+        return stamina < cost;
+    }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerEnterDP(DungeonEvent event) {
+        long currentTime = System.currentTimeMillis();
         String dungeonName = event.getDungeon().getDungeonName();
         List<Player> playerList = event.getDungeon().getTeam().getPlayers(PlayerStateType.ALL);
-        String particularTicket = ConfigManager.particularTicket.replaceFirst("%dungeon%", dungeonName);
-        if(ConfigManager.debug) System.out.println("特定门票名称为: " + particularTicket);
+
+        String particularTicket = null;
+        if(ConfigManager.ticketNamesMap.containsKey(dungeonName)) {
+            particularTicket = ConfigManager.ticketNamesMap.get(dungeonName);
+        }
+
         String defaultTicket = ConfigManager.defaultTicket;
+        List<String> failJoinList = new ArrayList<>();
 
         // 加入地牢之前判断体力与门票
         if(event.getEvent() instanceof DungeonStartEvent.Before) {
-            List<Player> failJoinList = new ArrayList<>();
-            List<Player> noTicketList = new ArrayList<>();
 
             for(Player player : playerList) {
-                double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
-                double cost = ConfigManager.defaultCost;
-                if(ConfigManager.mapCost.containsKey(dungeonName)) {
-                    cost = Double.parseDouble(PAPIHook.onPAPIProcess(player, ConfigManager.mapCost.get(dungeonName)));
-                }
-                if(stamina < cost) failJoinList.add(player);
-                // 如果开启了门票功能
-                if(ConfigManager.ticket) {
-                    // 如果没有通用门票或特定门票
-                    if(hasItem(player, particularTicket) && hasItem(player, defaultTicket)) {
-                        noTicketList.add(player);
+
+                String playerName = player.getName();
+
+                // 先检查该副本是否有写门票配置
+                if(particularTicket == null) {
+                    // 如果没写特定门票，检查是否有通用门票或检查体力，体力不足就加入到failJoinList里
+                    if(hasItem(player, defaultTicket) && noEnoughStamina(player, dungeonName)) {
+                        failJoinList.add(playerName);
+                    }
+                } else {
+                    // 如果没有特定门票和通用门票并且体力不够
+                    if (hasItem(player, particularTicket) && hasItem(player, defaultTicket) &&
+                            noEnoughStamina(player, dungeonName)) {
+                        failJoinList.add(playerName);
                     }
                 }
             }
 
-            if (!failJoinList.isEmpty() || !noTicketList.isEmpty()) {
-                if(!failJoinList.isEmpty()) {
-                    if(ConfigManager.messagesHashMap.containsKey("failEnter")) {
-                        // 拼接体力不足的玩家名字
-                        StringBuilder sb = new StringBuilder(ConfigManager.messagesHashMap.get("failEnter"));
-                        for (Player player : failJoinList) {
-                            sb.append(player.getName()).append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                        event.getDungeon().sendGroupMessage(ConfigManager.prefix + sb);
+            if (!failJoinList.isEmpty()) {
+                if(ConfigManager.messagesHashMap.containsKey("failEnter")) {
+                    // 拼接体力不足的玩家名字
+                    StringBuilder sb = new StringBuilder(ConfigManager.messagesHashMap.get("failEnter"));
+                    for (String name : failJoinList) {
+                        sb.append(name).append(", ");
                     }
+                    sb.setLength(sb.length() - 2);
+                    event.getDungeon().sendGroupMessage(ConfigManager.prefix + sb);
                 }
 
-                if(!noTicketList.isEmpty()) {
-                    if(ConfigManager.messagesHashMap.containsKey("noTicket")) {
-                        // 拼接没有门票的玩家名字
-                        StringBuilder sb = new StringBuilder(ConfigManager.messagesHashMap.get("noTicket")
-                                .replaceFirst("%dungeon%", dungeonName));
-                        for (Player player : noTicketList) {
-                            sb.append(player.getName()).append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                        event.getDungeon().sendGroupMessage(ConfigManager.prefix + sb);
-                    }
-                }
                 event.setCancelled(true);
             }
         }
@@ -103,40 +117,53 @@ public class DPSEvent implements Listener {
         if(event.getEvent() instanceof DungeonStartEvent.After) {
 
             for(Player player : playerList) {
-                double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
-                double cost = ConfigManager.defaultCost;
-                if(ConfigManager.mapCost.containsKey(dungeonName)) {
-                    cost = Double.parseDouble(PAPIHook.onPAPIProcess(player, ConfigManager.mapCost.get(dungeonName)));
-                }
-
-                // 如果开启了门票功能
-                if(ConfigManager.ticket) {
-
+                ItemStack ticketItem = consumeMap.get(player);
+                // 如果是有门票
+                if(ticketItem != null && ticketItem.getType() != Material.AIR) {
                     String ticketName = ticketItem.getItemMeta().getDisplayName();
                     if(ticketItem.getAmount() >= 1) {
                         ticketItem.setAmount(ticketItem.getAmount() - 1);
                     }
                     if(ConfigManager.messagesHashMap.containsKey("consume")) {
+                        if(ConfigManager.mapNamesMap.containsKey(dungeonName)) {
+                            dungeonName = ConfigManager.mapNamesMap.get(dungeonName);
+                        }
                         player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap
                                 .get("consume")
                                 .replaceFirst("%ticket%", ticketName)
                                 .replaceFirst("%dungeon%", dungeonName)
                         );
                     }
-                }
-                double newStamina = stamina - cost;
+                } else {
+                    double stamina = PlayerData.dataHashMap.get(player.getUniqueId()).getStamina();
+                    double cost = ConfigManager.defaultCost;
+                    if(ConfigManager.mapCost.containsKey(dungeonName)) {
+                        cost = Double.parseDouble(PAPIHook.onPAPIProcess(player, ConfigManager.mapCost.get(dungeonName)));
+                    }
 
-                PlayerData.dataHashMap.get(player.getUniqueId()).setStamina(newStamina);
-                if(ConfigManager.messagesHashMap.containsKey("cost")) {
-                    player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("cost")
-                            .replaceAll("%cost%", String.valueOf(cost))
-                            .replaceAll("%dungeon%", dungeonName)
-                            .replaceAll("%stamina%", String.valueOf(newStamina))
-                    );
-                }
+                    double newStamina = stamina - cost;
 
+                    PlayerData.dataHashMap.get(player.getUniqueId()).setStamina(newStamina);
+                    if(ConfigManager.messagesHashMap.containsKey("cost")) {
+                        if(ConfigManager.mapNamesMap.containsKey(dungeonName)) {
+                            dungeonName = ConfigManager.mapNamesMap.get(dungeonName);
+                        }
+                        player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("cost")
+                                .replaceAll("%cost%", String.valueOf(cost))
+                                .replaceAll("%dungeon%", dungeonName)
+                                .replaceAll("%stamina%", String.valueOf(newStamina))
+                        );
+                    }
+                }
             }
         }
+
+        if(ConfigManager.debug) {
+            long finishTime = System.currentTimeMillis();
+            long useTime = finishTime - currentTime;
+            LogInfo.debug("进入副本用时" + useTime/1000 + "ms");
+        }
+
     }
 
     @EventHandler
