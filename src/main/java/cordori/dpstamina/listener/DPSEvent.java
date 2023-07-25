@@ -34,7 +34,7 @@ public class DPSEvent implements Listener {
      * @param itemName 要检查的门票名
      * @return 是否拥有该门票，有就返回false，没有返回true
      */
-    public boolean hasItem(Player player, String itemName) {
+    public boolean noItem(Player player, String itemName) {
         Inventory inventory = player.getInventory();
         for (ItemStack item : inventory) {
             if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
@@ -86,12 +86,12 @@ public class DPSEvent implements Listener {
                 // 先检查该副本是否有写门票配置
                 if(particularTicket == null) {
                     // 如果没写特定门票，检查是否有通用门票或检查体力，体力不足就加入到failJoinList里
-                    if(hasItem(player, defaultTicket) && noEnoughStamina(player, dungeonName)) {
+                    if(noItem(player, defaultTicket) && noEnoughStamina(player, dungeonName)) {
                         failJoinList.add(playerName);
                     }
                 } else {
                     // 如果没有特定门票和通用门票并且体力不够
-                    if (hasItem(player, particularTicket) && hasItem(player, defaultTicket) &&
+                    if (noItem(player, particularTicket) && noItem(player, defaultTicket) &&
                             noEnoughStamina(player, dungeonName)) {
                         failJoinList.add(playerName);
                     }
@@ -168,14 +168,15 @@ public class DPSEvent implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(dps, () -> {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(dps, () -> {
             Player player = event.getPlayer();
             UUID uuid = player.getUniqueId();
             List<Object> objectsList = DPStamina.sql.getList(String.valueOf(uuid));
 
             // 如果数据不存在，插入默认数据
             if(objectsList == null) {
-                PlayerData playerData = new PlayerData("default", 100.0);
+                double stamina = dps.getConfig().getDouble("group.default.limit");
+                PlayerData playerData = new PlayerData("default", stamina);
                 PlayerData.dataHashMap.put(uuid, playerData);
                 DPStamina.sql.insert(String.valueOf(uuid));
                 return;
@@ -218,7 +219,7 @@ public class DPSEvent implements Listener {
                 DPStamina.sql.insertDate(player);
             }
 
-        });
+        }, 50L);
     }
 
     @EventHandler

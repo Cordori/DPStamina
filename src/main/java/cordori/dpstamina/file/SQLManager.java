@@ -95,7 +95,7 @@ public class SQLManager {
     @SneakyThrows
     public void insert(String uuid) {
         @Cleanup Connection conn = getConnection();
-
+        double stamina = DPStamina.getInstance().getConfig().getDouble("group.default.limit");
         String selectQuery = "SELECT staminaGroup, stamina, offlineTime FROM " + tableName + " WHERE uuid = ?";
         @Cleanup PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
         selectStmt.setString(1, uuid);
@@ -106,7 +106,7 @@ public class SQLManager {
             @Cleanup PreparedStatement insertStmt = conn.prepareStatement(insertQuery);
             insertStmt.setString(1, uuid);
             insertStmt.setString(2, "default");
-            insertStmt.setDouble(3, 100.0);
+            insertStmt.setDouble(3, stamina);
             insertStmt.setLong(4, System.currentTimeMillis());
             insertStmt.executeUpdate();
         }

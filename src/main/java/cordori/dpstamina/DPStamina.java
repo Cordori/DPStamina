@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 public final class DPStamina extends JavaPlugin {
@@ -34,12 +35,6 @@ public final class DPStamina extends JavaPlugin {
         loadSQL();
         Bukkit.getPluginManager().registerEvents(new DPSEvent(), this);
         Bukkit.getPluginCommand("dps").setExecutor(new MainCommand());
-        int saveTime = getConfig().getInt("saveTime");
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new StaminaScheduler(), 0L, 20L * 60L * ConfigManager.minutes);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new SQLScheduler(), 0L, 20L * 60L * saveTime);
-        if(ConfigManager.refresh) {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::refreshOnline, 0L, 20L * 60L);
-        }
         getLogger().info("§e[地牢体力]§b插件加载完成！");
     }
 
@@ -104,7 +99,26 @@ public final class DPStamina extends JavaPlugin {
         }
 
         sql = new SQLManager(sqlString, username, password, driver, tableName);
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> sql.createTable());
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            sql.createTable();
+            for(Player player : Bukkit.getOnlinePlayers()) {
+                UUID uuid = player.getUniqueId();
+                List<Object> objectsList = DPStamina.sql.getList(String.valueOf(uuid));
+                // 如果数据不存在，插入默认数据
+                if(objectsList == null) {
+                    double stamina = getConfig().getDouble("group.default.limit");
+                    PlayerData playerData = new PlayerData("default", stamina);
+                    PlayerData.dataHashMap.put(uuid, playerData);
+                    DPStamina.sql.insert(String.valueOf(uuid));
+                }
+            }
+            int saveTime = getConfig().getInt("saveTime");
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, new StaminaScheduler(), 0L, 20L * 60L * ConfigManager.minutes);
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, new SQLScheduler(), 0L, 20L * 60L * saveTime);
+            if(ConfigManager.refresh) {
+                Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::refreshOnline, 0L, 20L * 60L);
+            }
+        });
 
     }
 
